@@ -171,35 +171,39 @@ assistant:`;
 	let stdoutStream = global.childProcess.stdout;
 	let stderrStream = global.childProcess.stderr;
 
+	let lastErr = '';
+
 	const stderr = new ReadableStream({
-	    start(controller) {
-		const decoder = new TextDecoder();
-		const onData = (chunk) => {
-		    const data = stripAnsiCodes(decoder.decode(chunk));
-		    // Handle stderr data here
-		    console.error('=====  STDERR  =====');
-		    console.error(data);
-		};
+		start(controller) {
+			const decoder = new TextDecoder();
+			const onData = (chunk) => {
+				const data = stripAnsiCodes(decoder.decode(chunk));
+				lastErr = data;
+			};
 
-		const onClose = () => {
-		    console.log('stderr Readable Stream: CLOSED');
-		    controller.close();
-		};
+			const onClose = () => {
+				console.error('\n=====  STDERR  =====');
+				console.log('stderr Readable Stream: CLOSED');
+				console.log(lastErr);
+				controller.close();
+			};
+			
+			const onError = (error) => {
+				console.error('\n=====  STDERR  =====');
+				console.log('stderr Readable Stream: ERROR');
+				console.log(lastErr);
+				console.log(error);
+				controller.error(error);
+			};
 
-		const onError = (error) => {
-		    console.log('stderr Readable Stream: ERROR');
-		    console.log(error);
-		    controller.error(error);
-		};
-
-		stderrStream.on('data', onData);
-		stderrStream.on('close', onClose);
-		stderrStream.on('error', onError);
-	    },
+			stderrStream.on('data', onData);
+			stderrStream.on('close', onClose);
+			stderrStream.on('error', onError);
+		},
 	});
 
-	const stdout = new ReadableStream({
 	let initData = '';
+	const stdout = new ReadableStream({
 		start(controller) {
 			const decoder = new TextDecoder();
 			const onData = (chunk) => {
