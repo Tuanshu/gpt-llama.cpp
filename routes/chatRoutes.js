@@ -176,9 +176,8 @@ assistant:`;
 			const onData = (chunk) => {
 				const data = stripAnsiCodes(decoder.decode(chunk));
 				initData = initData + data;
-
 				// Don't return initial prompt
-				if (!responseStart && initData.includes(`### Response`)) {
+				if (!responseStart && initData.length > initPrompt.length) {
 					responseStart = true;
 					console.log('\n=====  RESPONSE  =====');
 					return;
@@ -252,6 +251,7 @@ assistant:`;
 					);
 					res.write('event: data\n');
 					res.write('data: [DONE]\n\n');
+					res.end();
 					global.lastRequest = {
 						type: 'chat',
 						messages: [
